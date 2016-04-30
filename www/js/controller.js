@@ -152,7 +152,8 @@ angular.module('starter')
 	  
       google.maps.event.addDomListener(window, 'load', initialize);	  
 	  
-	  function addMarker(point, text, show = true){						
+	  function addMarker(point, text, show){
+		show = show || true;
 		var marker = new google.maps.Marker({
 			position: point,
 			map: map
@@ -238,6 +239,9 @@ angular.module('starter')
 			  $scope.duration.walk += leg.duration.value / 60;
 			  var text = 'Vélos disponibles : ' + stationOrigin.available_bikes;
 			  addMarker(leg.end_location, text);
+			  if(!$scope.$$phase){
+				  $scope.$apply();
+			  }
 			}
 	    }); 
 
@@ -248,6 +252,9 @@ angular.module('starter')
 			  var leg = result.routes[0].legs[0];
 			  $scope.distance.bike += leg.distance.value / 1000;
 			  $scope.duration.bike += leg.duration.value / 60;
+			  if(!$scope.$$phase){
+				  $scope.$apply();
+			  }
 			}
 	    });
 
@@ -260,6 +267,10 @@ angular.module('starter')
 			  $scope.duration.walk += leg.duration.value / 60;
 			  var text = 'Places disponibles : ' + stationDest.available_bike_stands;
 			  addMarker(leg.start_location, text);
+			  
+			  if(!$scope.$$phase){
+				  $scope.$apply();
+			  }
 			}
 	    });
 	  }

@@ -42,7 +42,8 @@
 			   placeholder="Départ : {{myPosition.formatted_address}}"
 			   autocomplete="off"
 			   ng-model="queryFrom"
-			   item-view-value-key="formatted_address"/>
+			   item-view-value-key="formatted_address"
+			   items-method="getAddressSuggestions(query)"/>
 	  </label>
 	</ion-header-bar>
 	<ion-header-bar class="bar bar-subheader">
@@ -63,8 +64,8 @@
 		<div id="map" data-tap-disabled="true"></div>
 		<div class="infos" ng-show="distance && duration">
 			<p><strong>Total</strong> : {{distance.walk + distance.bike | number:2}} km, {{duration.walk + duration.bike | number:2}} mn</p>
-			<p><strong><span class="ion-android-walk"></strong> : {{distance.walk | number:2}} km, {{duration.walk | number:2}} mn</p>
-			<p><strong><span class="ion-android-bicycle"></strong> : {{distance.bike | number:2}} km, {{duration.bike | number:2}} mn</p>
+			<p><strong><span class="ion-android-walk"></strong> : {{distance.walk | number:2}} km, {{duration.walk | number:2}} mn
+			 | <strong><span class="ion-android-bicycle"></strong> : {{distance.bike | number:2}} km, {{duration.bike | number:2}} mn</p>
 		</div>
     </ion-content>
   </body>
