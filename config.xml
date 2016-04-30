@@ -9,8 +9,8 @@
   </author>
   <content src="index.html"/>
   <access origin="*"/>
-  <access origin="https://maps.googleapis.com"/>
   <allow-navigation href="*"/>
+  <allow-navigation href="*://*.googleapis.com/*"/>
   <allow-intent href="https://maps.googleapis.com"/>
   <preference name="webviewbounce" value="false"/>
   <preference name="UIWebViewBounce" value="false"/>
