@@ -1,6 +1,5 @@
 angular.module('starter')
 	.controller('MapCtrl', function($scope, $ionicLoading, $compile, $http, $q, $cordovaGeolocation) {
-		try{
 		var apiKey = 'bcfd315d85337c27406702b8c117b0d8763d3036';
 		var origin;
 		var destination;
@@ -130,7 +129,7 @@ angular.module('starter')
 					map.setCenter(origin);
 					map.setZoom(16);
 				}, function(err) {
-				  alert(err.message);
+				  console.log(err);
 			});
 		}
 		$scope.getMe();
@@ -361,9 +360,5 @@ angular.module('starter')
 		
 		$scope.loading = false;
 	  }
-		}
-		catch(e){
-			alert(e.message);
-		}
       
-    });
+});
