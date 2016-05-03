@@ -33,8 +33,16 @@ angular.module('starter')
 		map = new google.maps.Map(document.getElementById('map'), {
 			mapTypeControl: false,
 			center: {lat: -33.8688, lng: 151.2195},
-			zoom: 13
+			zoom: 13,
+			disableDefaultUI: true
 		});
+		
+		var lineSymbol = {
+			path: 'M 0,-1 0,1',
+			strokeOpacity: 1,
+			strokeWeight: 2,
+			scale: 3
+		};
 		
 	    App  = { 
 			map :map,
@@ -44,24 +52,42 @@ angular.module('starter')
 				map: map,
 				preserveViewport: true,
 				suppressMarkers: true,
+				suppressBicyclingLayer: true,
 				polylineOptions: {
-					strokeColor:'red'
+					strokeColor:'#3B0E7A',
+					strokeWeight:2,
+					strokeOpacity: 0,
+					icons: [{
+						icon: lineSymbol,
+						offset: '0',
+						repeat: '15px'
+					}],
 				}
 			}),  
 			directionsDisplay2: new goo.DirectionsRenderer({
 				map: map,
 				preserveViewport: true,
 				suppressMarkers: true,
+				suppressBicyclingLayer: true,
 				polylineOptions: {
-					strokeColor:'blue'
+					strokeColor:'#3B0E7A',
+					strokeWeight:4
 				}
 			}),
 			directionsDisplay3: new goo.DirectionsRenderer({
 				map: map,
 				preserveViewport: true,
 				suppressMarkers: true,
+				suppressBicyclingLayer: true,
 				polylineOptions: {
-					strokeColor:'yellow'
+					strokeColor:'#3B0E7A',
+					strokeOpacity: 0,
+					strokeWeight:2,
+					icons: [{
+						icon: lineSymbol,
+						offset: '0',
+						repeat: '15px'
+					}],
 				}
 			})  
 		};
@@ -83,7 +109,9 @@ angular.module('starter')
 				.then(function (position) {
 					origin = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 					geocoder.geocode(
-						{location: origin},
+						{
+							location: origin
+						},
 						function (results, status) {
 							$scope.queryFrom = results[0].formatted_address;
 							
@@ -92,7 +120,7 @@ angular.module('starter')
 								null, /* size is determined at runtime */
 								null, /* origin is 0,0 */
 								null, /* anchor is bottom center of the scaled image */
-								new google.maps.Size(22, 22)
+								new google.maps.Size(25, 25)
 							);  
 							addMarker(origin, 'Départ', true, pinIcon);
 							$scope.$apply();
@@ -130,9 +158,7 @@ angular.module('starter')
 			geocoder.geocode(
 				{
 					address: queryString,
-					componentRestrictions: {
-						country: 'FR'
-					}
+					bounds: map.getBounds()
 				},
 				function (results, status) {
 					if (status == google.maps.GeocoderStatus.OK){						
@@ -162,24 +188,35 @@ angular.module('starter')
 	  
       google.maps.event.addDomListener(window, 'load', initialize);	  
 	  
-	  function addMarker(point, text, show, icon){
+	  function addMarker(point, text, show, icon, label){
 		show = typeof(show) != 'undefined' ? show : true;
 		var marker = new google.maps.Marker({
 			position: point,
 			map: map,
-			icon: icon
+			icon: icon,
 		});
+		if(label){
+			marker.setLabel({
+				text: label,
+				fontWeight: 'bold',
+				fontSize: '12px',
+				fontFamily: '"Courier New", Courier,Monospace',
+				color: 'white'
+			});
+		}
 		markers.push(marker);
 		
-		var infowindow = new google.maps.InfoWindow({
-			content: '<div class="info-window">' + text + '</div>'
-	    });
-		if(show){			
-			infowindow.open(map, marker);
+		if(text){			
+			var infowindow = new google.maps.InfoWindow({
+				content: '<div class="info-window">' + text + '</div>'
+			});
+			if(show){			
+				infowindow.open(map, marker);
+			}
+			marker.addListener('click', function() {
+				infowindow.open(map, marker);
+			});
 		}
-		marker.addListener('click', function() {
-			infowindow.open(map, marker);
-		});
 	  }
 	  
 	  function getNearestVelib(point, isEnd, callback){
@@ -188,27 +225,37 @@ angular.module('starter')
 			  var dist = 200000;
 			  var stations = [];
 			  var station;
+			  
+			  var pinIcon = {
+				url: "https://maps.gstatic.com/mapfiles/ms2/micons/purple.png",
+				size: null,
+				origin: new google.maps.Point(0, -4),
+				anchor: null,
+				scaledSize: new google.maps.Size(25, 25)
+			  };
+			  
 			  for(var i in data){
-				  if(!isEnd && data[i].available_bikes < 1 || isEnd && data[i].available_bike_stands < 1){
+				  if(!isEnd && data[i].available_bikes < 1 || isEnd && data[i].available_bike_stands < 1 || data[i].status != 'OPEN'){
 					  continue;
 				  }
 				  var pointStation = new google.maps.LatLng(data[i].position.lat, data[i].position.lng);
-				  console.log(point);
 				  var newDist = google.maps.geometry.spherical.computeDistanceBetween(pointStation, point);
-				  stations.push({station: data[i], location: pointStation});
+				  			  
+				  if(newDist < 400){
+					stations.push({station: data[i], location: pointStation, dist: newDist});
+				  }
 				  if(newDist < dist){
 					  dist = newDist;
 					  station = data[i];
 				  }
 			  }
 			  
-			  // var bounds = map.getBounds();
-			  // stations.forEach(function(s){
-				  // if(bounds.contains(s.location)){
-					  // addMarker(s.location, 'Available bikes : ' + s.station.available_bikes);
-				  // };
-			  // });
-			  
+			  for(var i in stations){	
+				if(stations[i].station == station)
+					continue;
+				
+				addMarker(stations[i].location, '', false, pinIcon, isEnd ? stations[i].station.available_bike_stands.toString() : stations[i].station.available_bikes.toString());
+			  }
 			  
 			  callback(station);
 		  }, function(err){
@@ -254,15 +301,16 @@ angular.module('starter')
 			  $scope.distance.walk += leg.distance.value / 1000;
 			  $scope.duration.walk += leg.duration.value / 60;
 			  var text = stationOrigin.address + '</br>Vélos disponibles : ' + stationOrigin.available_bikes;
-			  addMarker(leg.end_location, text, true, 'img/velib.gif');
 			  
 			  var pinIcon = new google.maps.MarkerImage(
 				"https://maps.gstatic.com/mapfiles/ms2/micons/purple.png",
 				null, /* size is determined at runtime */
 				null, /* origin is 0,0 */
 				null, /* anchor is bottom center of the scaled image */
-				new google.maps.Size(22, 22)
+				new google.maps.Size(25, 25)
 			  );  
+			  
+			  addMarker(leg.end_location, text, false, pinIcon, stationOrigin.available_bikes);
 			  addMarker(leg.start_location, 'Départ', false, pinIcon);
 			  
 			  if(!$scope.$$phase){
@@ -291,16 +339,17 @@ angular.module('starter')
 			  var leg = result.routes[0].legs[0];
 			  $scope.distance.walk += leg.distance.value / 1000;
 			  $scope.duration.walk += leg.duration.value / 60;
-			  var text = stationDest.address + '</br>Places disponibles : ' + stationDest.available_bike_stands;
-			  addMarker(leg.start_location, text, true, 'img/velib.gif');			  
+			  var text = stationDest.address + '</br>Places disponibles : ' + stationDest.available_bike_stands;	  
 			  
 			  var pinIcon = new google.maps.MarkerImage(
 				"https://maps.gstatic.com/mapfiles/ms2/micons/green.png",
 				null, /* size is determined at runtime */
 				null, /* origin is 0,0 */
 				null, /* anchor is bottom center of the scaled image */
-				new google.maps.Size(22, 22)
+				new google.maps.Size(25, 25)
 			  );
+			  
+			  addMarker(leg.start_location, text, false, 'img/velib.gif', stationDest.available_bike_stands);		
 			  addMarker(leg.end_location, 'Arrivée', false, pinIcon);
 			  
 			  if(!$scope.$$phase){
