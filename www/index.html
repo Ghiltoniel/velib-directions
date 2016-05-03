@@ -16,7 +16,6 @@
 
     <!-- ionic/angularjs js -->
     <script src="lib/ionic/js/ionic.bundle.js"></script>
-	<script src="lib/ion-autocomplete/dist/ion-autocomplete.js"></script>
 
     <!-- cordova script (this will be a 404 during development) -->
 	<script src="lib/ngCordova/dist/ng-cordova.js"></script>
@@ -32,41 +31,35 @@
 	
   </head>
   <body ng-controller="MapCtrl">
-	<ion-header-bar  class="bar bar-header">
-	  <label class="item-input-wrapper">
-		<i class="icon ion-ios-search placeholder-icon"></i>
-		<input ion-autocomplete 
-		       type="text"
-			   readonly="readonly"
-			   class="ion-autocomplete"
-			   placeholder="Départ : {{myPosition.formatted_address}}"
-			   autocomplete="off"
-			   ng-model="queryFrom"
-			   item-view-value-key="formatted_address"
-			   items-method="getAddressSuggestions(query)"/>
-	  </label>
-	</ion-header-bar>
-	<ion-header-bar class="bar bar-subheader">
-	  <label class="item-input-wrapper">
-		<i class="icon ion-ios-search placeholder-icon"></i>
-		<input ion-autocomplete 
-			   type="text" 
-			   readonly="readonly" 
-			   class="ion-autocomplete" 
-			   autocomplete="off" 
-			   ng-model="queryTo"
-			   item-view-value-key="formatted_address"
-			   placeholder="Destination"
-			   items-method="getAddressSuggestions(query)" />
-	  </label>
-	</ion-header-bar>
-    <ion-content class="has-header has-subheader">
+  
+    <ion-content>
+		<div class="inputs">
+			<label class="item item-input">
+				<i class="icon ion-search placeholder-icon"></i>
+				<input type="text"
+					   ng-model="queryFrom"
+					   ng-change="getAddressSuggestions(queryFrom, 'origin')"/>
+			</label>
+			<label class="item item-input">
+				<i class="icon ion-search placeholder-icon"></i>
+				<input type="text"
+					   placeholder="Destination"
+					   ng-model="queryTo"
+					   ng-change="getAddressSuggestions(queryTo, 'destination')"/>
+			</label>
+			<ion-list type="list-inset" class="results" ng-show="results">
+				<ion-item ng-repeat="item in results" ng-click="pickAddress(item)">
+					{{item.formatted_address}}
+				</ion-item>
+			</ion-list>
+		</div>
 		<div id="map" data-tap-disabled="true"></div>
 		<div class="infos" ng-show="distance && duration">
 			<p><strong>Total</strong> : {{distance.walk + distance.bike | number:2}} km, {{duration.walk + duration.bike | number:2}} mn</p>
 			<p><strong><span class="ion-android-walk"></strong> : {{distance.walk | number:2}} km, {{duration.walk | number:2}} mn
 			 | <strong><span class="ion-android-bicycle"></strong> : {{distance.bike | number:2}} km, {{duration.bike | number:2}} mn</p>
 		</div>
+		<ion-spinner ng-show="loading"></ion-spinner>
     </ion-content>
   </body>
 </html>

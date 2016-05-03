@@ -43,6 +43,7 @@ angular.module('starter')
 			directionsDisplay1: new goo.DirectionsRenderer({
 				map: map,
 				preserveViewport: true,
+				suppressMarkers: true,
 				polylineOptions: {
 					strokeColor:'red'
 				}
@@ -50,6 +51,7 @@ angular.module('starter')
 			directionsDisplay2: new goo.DirectionsRenderer({
 				map: map,
 				preserveViewport: true,
+				suppressMarkers: true,
 				polylineOptions: {
 					strokeColor:'blue'
 				}
@@ -57,6 +59,7 @@ angular.module('starter')
 			directionsDisplay3: new goo.DirectionsRenderer({
 				map: map,
 				preserveViewport: true,
+				suppressMarkers: true,
 				polylineOptions: {
 					strokeColor:'yellow'
 				}
@@ -81,9 +84,17 @@ angular.module('starter')
 					origin = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 					geocoder.geocode(
 						{location: origin},
-						function (results, status) {							
-							$scope.myPosition = results[0];
-							addMarker(origin, 'Départ');
+						function (results, status) {
+							$scope.queryFrom = results[0].formatted_address;
+							
+							var pinIcon = new google.maps.MarkerImage(
+								"https://maps.gstatic.com/mapfiles/ms2/micons/purple-dot.png",
+								null, /* size is determined at runtime */
+								null, /* origin is 0,0 */
+								null, /* anchor is bottom center of the scaled image */
+								new google.maps.Size(22, 22)
+							);  
+							addMarker(origin, 'Départ', true, pinIcon);
 							$scope.$apply();
 						}
 					);
@@ -95,49 +106,48 @@ angular.module('starter')
 		}
 		$scope.getMe();
 
-		$scope.$watch('queryFrom', function(){
-			if($scope.queryFrom && $scope.queryFrom.length && $scope.queryFrom[0].place_id){
-				origin = $scope.queryFrom[0];
-				expandViewportToFitPlace(map, origin);
-				route();
+		$scope.pickAddress = function(address){
+			if(typeSearch == "origin"){
+				origin = address.geometry.location;
+				expandViewportToFitPlace(map, address);
+				$scope.queryFrom = address.formatted_address;
 			}
-		});
-
-		$scope.$watch('queryTo', function(){
-			if($scope.queryTo && $scope.queryTo.length && $scope.queryTo[0].place_id){
-				destination = $scope.queryTo[0];
-				expandViewportToFitPlace(map, destination);
-				route();
+			else if(typeSearch == "destination"){
+				destination = address.geometry.location;
+				expandViewportToFitPlace(map, address);
+				$scope.queryTo = address.formatted_address;
 			}
-		});
+			route();
+			delete $scope.results;
+		}
 		
 		var geocoder = new google.maps.Geocoder();
-
-		$scope.getAddressSuggestions = function(queryString){
-			var defer = $q.defer();
+		var typeSearch;
+		
+		$scope.getAddressSuggestions = function(queryString, type){
+			typeSearch = type;
+			
 			geocoder.geocode(
-				{address: queryString},
+				{
+					address: queryString,
+					componentRestrictions: {
+						country: 'FR'
+					}
+				},
 				function (results, status) {
-					if (status == google.maps.GeocoderStatus.OK) { defer.resolve(results); }
-					else { defer.reject(results); }
+					if (status == google.maps.GeocoderStatus.OK){						
+						$scope.results = results;
+					}
 				}
 			);
-			return defer.promise;
 		}
 
 		function route() {
 			if (!origin || !destination) {
 				return;
 			}
-			
+			$scope.loading = true;
 			clearMarkers();
-			console.log('search !!');
-			if(origin.place_id){
-				origin = origin.geometry.location;
-			}
-			if(destination.place_id){
-				destination = destination.geometry.location;
-			}
 			
 			getNearestVelib(origin, false, function(stationOrigin){
 				getNearestVelib(destination, true, function(stationDest){					
@@ -152,19 +162,24 @@ angular.module('starter')
 	  
       google.maps.event.addDomListener(window, 'load', initialize);	  
 	  
-	  function addMarker(point, text, show){
-		show = show || true;
+	  function addMarker(point, text, show, icon){
+		show = typeof(show) != 'undefined' ? show : true;
 		var marker = new google.maps.Marker({
 			position: point,
-			map: map
+			map: map,
+			icon: icon
 		});
 		markers.push(marker);
+		
 		var infowindow = new google.maps.InfoWindow({
-			content: text
+			content: '<div class="info-window">' + text + '</div>'
 	    });
 		if(show){			
 			infowindow.open(map, marker);
 		}
+		marker.addListener('click', function() {
+			infowindow.open(map, marker);
+		});
 	  }
 	  
 	  function getNearestVelib(point, isEnd, callback){
@@ -178,6 +193,7 @@ angular.module('starter')
 					  continue;
 				  }
 				  var pointStation = new google.maps.LatLng(data[i].position.lat, data[i].position.lng);
+				  console.log(point);
 				  var newDist = google.maps.geometry.spherical.computeDistanceBetween(pointStation, point);
 				  stations.push({station: data[i], location: pointStation});
 				  if(newDist < dist){
@@ -237,8 +253,18 @@ angular.module('starter')
 			  var leg = result.routes[0].legs[0];
 			  $scope.distance.walk += leg.distance.value / 1000;
 			  $scope.duration.walk += leg.duration.value / 60;
-			  var text = 'Vélos disponibles : ' + stationOrigin.available_bikes;
-			  addMarker(leg.end_location, text);
+			  var text = stationOrigin.address + '</br>Vélos disponibles : ' + stationOrigin.available_bikes;
+			  addMarker(leg.end_location, text, true, 'img/velib.gif');
+			  
+			  var pinIcon = new google.maps.MarkerImage(
+				"https://maps.gstatic.com/mapfiles/ms2/micons/purple.png",
+				null, /* size is determined at runtime */
+				null, /* origin is 0,0 */
+				null, /* anchor is bottom center of the scaled image */
+				new google.maps.Size(22, 22)
+			  );  
+			  addMarker(leg.start_location, 'Départ', false, pinIcon);
+			  
 			  if(!$scope.$$phase){
 				  $scope.$apply();
 			  }
@@ -265,14 +291,25 @@ angular.module('starter')
 			  var leg = result.routes[0].legs[0];
 			  $scope.distance.walk += leg.distance.value / 1000;
 			  $scope.duration.walk += leg.duration.value / 60;
-			  var text = 'Places disponibles : ' + stationDest.available_bike_stands;
-			  addMarker(leg.start_location, text);
+			  var text = stationDest.address + '</br>Places disponibles : ' + stationDest.available_bike_stands;
+			  addMarker(leg.start_location, text, true, 'img/velib.gif');			  
+			  
+			  var pinIcon = new google.maps.MarkerImage(
+				"https://maps.gstatic.com/mapfiles/ms2/micons/green.png",
+				null, /* size is determined at runtime */
+				null, /* origin is 0,0 */
+				null, /* anchor is bottom center of the scaled image */
+				new google.maps.Size(22, 22)
+			  );
+			  addMarker(leg.end_location, 'Arrivée', false, pinIcon);
 			  
 			  if(!$scope.$$phase){
 				  $scope.$apply();
 			  }
 			}
 	    });
+		
+		$scope.loading = false;
 	  }
       
     });
