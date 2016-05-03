@@ -1,5 +1,6 @@
 angular.module('starter')
 	.controller('MapCtrl', function($scope, $ionicLoading, $compile, $http, $q, $cordovaGeolocation) {
+		try{
 		var apiKey = 'bcfd315d85337c27406702b8c117b0d8763d3036';
 		var origin;
 		var destination;
@@ -120,7 +121,7 @@ angular.module('starter')
 								null, /* size is determined at runtime */
 								null, /* origin is 0,0 */
 								null, /* anchor is bottom center of the scaled image */
-								new google.maps.Size(25, 25)
+								new google.maps.Size(28, 28)
 							);  
 							addMarker(origin, 'Départ', true, pinIcon);
 							$scope.$apply();
@@ -129,7 +130,7 @@ angular.module('starter')
 					map.setCenter(origin);
 					map.setZoom(16);
 				}, function(err) {
-				  // error
+				  alert(err.message);
 			});
 		}
 		$scope.getMe();
@@ -227,11 +228,11 @@ angular.module('starter')
 			  var station;
 			  
 			  var pinIcon = {
-				url: "https://maps.gstatic.com/mapfiles/ms2/micons/purple.png",
+				url: "https://maps.gstatic.com/mapfiles/ms2/micons/" + (isEnd ? "green.png" : "purple.png"),
 				size: null,
 				origin: new google.maps.Point(0, -4),
 				anchor: null,
-				scaledSize: new google.maps.Size(25, 25)
+				scaledSize: new google.maps.Size(28, 28)
 			  };
 			  
 			  for(var i in data){
@@ -303,14 +304,14 @@ angular.module('starter')
 			  var text = stationOrigin.address + '</br>Vélos disponibles : ' + stationOrigin.available_bikes;
 			  
 			  var pinIcon = new google.maps.MarkerImage(
-				"https://maps.gstatic.com/mapfiles/ms2/micons/purple.png",
+				"https://maps.gstatic.com/mapfiles/ms2/micons/blue.png",
 				null, /* size is determined at runtime */
 				null, /* origin is 0,0 */
 				null, /* anchor is bottom center of the scaled image */
-				new google.maps.Size(25, 25)
+				new google.maps.Size(28, 28)
 			  );  
 			  
-			  addMarker(leg.end_location, text, false, pinIcon, stationOrigin.available_bikes);
+			  addMarker(leg.end_location, text, false, 'img/velib.gif', stationOrigin.available_bikes);
 			  addMarker(leg.start_location, 'Départ', false, pinIcon);
 			  
 			  if(!$scope.$$phase){
@@ -342,11 +343,11 @@ angular.module('starter')
 			  var text = stationDest.address + '</br>Places disponibles : ' + stationDest.available_bike_stands;	  
 			  
 			  var pinIcon = new google.maps.MarkerImage(
-				"https://maps.gstatic.com/mapfiles/ms2/micons/green.png",
+				"https://maps.gstatic.com/mapfiles/ms2/micons/orange.png",
 				null, /* size is determined at runtime */
 				null, /* origin is 0,0 */
 				null, /* anchor is bottom center of the scaled image */
-				new google.maps.Size(25, 25)
+				new google.maps.Size(28, 28)
 			  );
 			  
 			  addMarker(leg.start_location, text, false, 'img/velib.gif', stationDest.available_bike_stands);		
@@ -360,5 +361,9 @@ angular.module('starter')
 		
 		$scope.loading = false;
 	  }
+		}
+		catch(e){
+			alert(e.message);
+		}
       
     });
